@@ -1,0 +1,13 @@
+{
+    "go.buildFlags": [
+        "-o=main.wasm"
+    ], 
+    "go.toolsEnvVars": {
+        "GOOS" : "js", 
+        "GOARCH": "wasm"
+    },
+    "go.buildOnSave": "workspace",
+    "go.lintOnSave": "off",
+    
+
+}
