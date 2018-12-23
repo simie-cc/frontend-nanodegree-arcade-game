@@ -12,14 +12,12 @@ var lastFrameAt time.Time = time.Now()
 
 func StartFpsCounting() {
 	fmt.Println("FRAME_INTERVAL", FRAME_INTERVAL)
-
 	secondTicker := time.NewTicker(1 * time.Second)
-	fpsDiv := document.Call("getElementById", "fps")
 
 	go func() {
 		for {
 			<-secondTicker.C
-			fpsDiv.Set("innerHTML", fmt.Sprintf("%d", fps))
+			renderer.UpdateFPS(fmt.Sprintf("%d", fps))
 			fps = 0
 		}
 	}()

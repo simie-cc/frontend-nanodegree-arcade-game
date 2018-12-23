@@ -15,11 +15,9 @@ type Enemy struct {
 
 func NewEnemy() *Enemy {
 	randomStart := rand.Intn(10)
-	randomSpeedIndex := rand.Intn(len(EnemySpeeds))
 	en := &Enemy{
-		x:               -randomStart * CELL_WIDTH,
-		y:               0,
-		secondSpeedByPx: EnemySpeeds[randomSpeedIndex],
+		x: -randomStart * CELL_WIDTH,
+		y: 0,
 	}
 	en.randomY()
 	return en
@@ -28,6 +26,9 @@ func NewEnemy() *Enemy {
 func (en *Enemy) randomY() {
 	randomRow := rand.Intn(3) + 1
 	en.y = randomRow * CELL_HEIGHT
+
+	randomSpeedIndex := rand.Intn(len(EnemySpeeds))
+	en.secondSpeedByPx = EnemySpeeds[randomSpeedIndex]
 }
 
 func (en *Enemy) GetXY() (int, int) {
