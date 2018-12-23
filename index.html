@@ -9,10 +9,21 @@
 				go.run(res.instance)	
 			})
 
+			function clickDebug() {
+				let callId = new Date().getTime()
+				console.log("callid is ", callId)
+				GetVerboseLevel(callId)
+				setTimeout(() => {
+					const rvKey = 'rv_' + callId
+					console.log('return value', window[rvKey])
+					delete window[rvKey]
+				})
+			}
 		</script>
 	</head>
 	<body>
 		<canvas id="mycanvas"></canvas>
 		<div class='fps-div'>FPS: <span id='fps'></div></div>
+		<div class='debug-div'><button id='debug-button' onclick='clickDebug()'>DEBUG</button></div>
 	</body>
 </html>

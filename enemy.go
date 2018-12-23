@@ -14,16 +14,19 @@ type Enemy struct {
 }
 
 func NewEnemy() *Enemy {
-	randomStart := rand.Intn(10)
+
 	en := &Enemy{
-		x: -randomStart * CELL_WIDTH,
+		x: 0,
 		y: 0,
 	}
-	en.randomY()
+	en.randomAll()
 	return en
 }
 
-func (en *Enemy) randomY() {
+func (en *Enemy) randomAll() {
+	randomStart := rand.Intn(8) + 1
+	en.x = -randomStart * CELL_WIDTH
+
 	randomRow := rand.Intn(3) + 1
 	en.y = randomRow * CELL_HEIGHT
 
@@ -48,7 +51,6 @@ func (en *Enemy) tick(dt time.Duration) {
 	en.x += int(shift)
 
 	if en.x > width {
-		en.x = -CELL_WIDTH
-		en.randomY()
+		en.randomAll()
 	}
 }

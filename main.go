@@ -41,6 +41,8 @@ const (
 
 	IMAGE_BUG   = "images/enemy-bug.png"
 	IMAGE_ARROW = "images/arrow.png"
+
+	DEBUG = false
 )
 
 var (
@@ -67,6 +69,9 @@ var (
 	gameMode          GAMEMODE
 	charSelected      = IMAGE_PINK_GIRL
 	charSelectedIndex = 0
+	menuImageRects    []Rect
+
+	verboseLevel = 1
 )
 
 func init() {
@@ -80,10 +85,18 @@ func main() {
 	StartFpsCounting()
 	renderer.ListenClickEvent(handleClickEvent)
 	renderer.ListenKeyboardEvent(handleKeyboardEvent)
+	renderer.ListenMouseMoveEvent(handleMouseMoveEvent)
+
+	systemService.RegisterGetVerboseLevel(func() int {
+		return verboseLevel
+	})
+	systemService.RegisterSetVerboseLevel(func(newLevel int) {
+		verboseLevel = newLevel
+	})
 
 	fmt.Println("Start game...")
-	//startIntro()
-	startGame(3)
+	startIntro()
+	//startGame(3)
 
 	<-done
 
@@ -137,6 +150,14 @@ func startMenu() {
 	gameMode = GAMEMODE_MENU
 	fmt.Println("Gamemode to", gameMode)
 
+	menuImageRects = make([]Rect, len(CharImages))
+
+	for idx, _ := range CharImages {
+		cx, cy := idx*CELL_WIDTH, 300
+		menuImageRects[idx] = Rect{x1: cx, y1: cy,
+			x2: cx + CELL_WIDTH - 1, y2: cy + 171}
+	}
+
 	renderer.RegisterRenderFunction(func() {
 		renderer.ClearRect()
 		renderGameTitle("這是一個小遊戲", "")
@@ -169,6 +190,7 @@ func startGame(withEnemyCount int) {
 	gameMode = GAMEMODE_PLAY
 	enemyCount = withEnemyCount
 
+	charSelected = CharImages[charSelectedIndex]
 	player = NewPlayer()
 	enemies = make([]*Enemy, enemyCount)
 	for idx, _ := range enemies {
@@ -252,6 +274,26 @@ func drawEntity(p Positional, charurl string) {
 func handleClickEvent(eventType string, x, y int) {
 	if gameMode == GAMEMODE_INTRO {
 		startMenu()
+	} else if gameMode == GAMEMODE_MENU {
+		for _, imageRect := range menuImageRects {
+			if imageRect.PointInRect(x, y) {
+				startGame(3)
+				return
+			}
+		}
+	}
+}
+
+func handleMouseMoveEvent(eventType string, x, y int) {
+	if gameMode != GAMEMODE_MENU {
+		return
+	}
+
+	for idx, imageRect := range menuImageRects {
+		if imageRect.PointInRect(x, y) {
+			charSelectedIndex = idx
+			return
+		}
 	}
 }
 
@@ -273,13 +315,13 @@ func handleKeyboardEventMenu(eventType, key string) {
 		if charSelectedIndex < 0 {
 			charSelectedIndex = len(CharImages) - 1
 		}
-		charSelected = CharImages[charSelectedIndex]
+
 	case "ArrowRight":
 		charSelectedIndex++
 		if charSelectedIndex >= len(CharImages) {
 			charSelectedIndex = 0
 		}
-		charSelected = CharImages[charSelectedIndex]
+
 	case "Enter":
 		startGame(3)
 	}

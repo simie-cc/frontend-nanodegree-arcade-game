@@ -6,7 +6,8 @@ import (
 )
 
 type JSRenderer struct {
-	Renderer
+	JSReleasable
+
 	document js.Value
 	window   js.Value
 	ctx      js.Value
@@ -15,11 +16,11 @@ type JSRenderer struct {
 	imageCache map[string]js.Value
 	imageDone  chan bool
 
-	callbacks []js.Callback
-
 	renderFn  func()
 	rendering bool
 }
+
+var renderer = &JSRenderer{}
 
 func init() {
 	renderer = &JSRenderer{
@@ -100,27 +101,40 @@ func (r *JSRenderer) ListenKeyboardEvent(fn func(eventType, key string)) {
 }
 
 func (r *JSRenderer) ListenClickEvent(fn func(eventType string, clientX, clientY int)) {
+	canvas := r.document.Call("getElementById", "mycanvas")
+
 	var eventHandler = js.NewCallback(func(args []js.Value) {
 		event := args[0]
 		eventType := event.Get("type").String()
 		x := event.Get("clientX").Int()
 		y := event.Get("clientY").Int()
-		fn(eventType, x, y)
+		rect := canvas.Call("getBoundingClientRect")
+		rx, ry := rect.Get("left").Int(), rect.Get("top").Int()
+
+		fn(eventType, x-rx, y-ry)
 	})
 	r.deferRelease(eventHandler)
 
-	r.document.Call("addEventListener", "click", eventHandler)
+	canvas.Call("addEventListener", "click", eventHandler)
 }
 
-func (r *JSRenderer) deferRelease(callback js.Callback) {
-	r.callbacks = append(r.callbacks, callback)
-}
+func (r *JSRenderer) ListenMouseMoveEvent(fn func(eventType string, clientX, clientY int)) {
+	canvas := r.document.Call("getElementById", "mycanvas")
 
-func (r *JSRenderer) Release() {
-	for _, r := range r.callbacks {
-		r.Release()
-	}
-	r.callbacks = nil
+	var eventHandler = js.NewCallback(func(args []js.Value) {
+		event := args[0]
+		eventType := event.Get("type").String()
+		// Refer: https://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
+		x := event.Get("clientX").Int()
+		y := event.Get("clientY").Int()
+		rect := canvas.Call("getBoundingClientRect")
+		rx, ry := rect.Get("left").Int(), rect.Get("top").Int()
+
+		fn(eventType, x-rx, y-ry)
+	})
+	r.deferRelease(eventHandler)
+
+	canvas.Call("addEventListener", "mousemove", eventHandler)
 }
 
 func (r *JSRenderer) RegisterRenderFunction(fn func()) {

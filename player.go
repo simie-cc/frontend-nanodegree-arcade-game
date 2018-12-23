@@ -25,13 +25,13 @@ type Rect struct {
 }
 
 func (rect *Rect) isIntersect(rect2 *Rect) bool {
-	return rect.pointInRect(rect2.x1, rect2.y1) ||
-		rect.pointInRect(rect2.x1, rect2.y2) ||
-		rect.pointInRect(rect2.x2, rect2.y1) ||
-		rect.pointInRect(rect2.x2, rect2.y2)
+	return rect.PointInRect(rect2.x1, rect2.y1) ||
+		rect.PointInRect(rect2.x1, rect2.y2) ||
+		rect.PointInRect(rect2.x2, rect2.y1) ||
+		rect.PointInRect(rect2.x2, rect2.y2)
 }
 
-func (rect *Rect) pointInRect(x, y int) bool {
+func (rect *Rect) PointInRect(x, y int) bool {
 	return rect.x1 <= x && x <= rect.x2 &&
 		rect.y1 <= y && y <= rect.y2
 }
