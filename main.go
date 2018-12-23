@@ -4,20 +4,22 @@ package main
 
 import (
 	"fmt"
-	// "math"
-	// "math/rand"
+	"math/rand"
 	"syscall/js"
+	"time"
 )
 
 const (
-	width  float64 = 505
-	height float64 = 606
+	width  int = 505
+	height int = 606
 
 	CELL_WIDTH  = 101
 	CELL_HEIGHT = 83
 
 	ROW_COUNT = 6
 	COL_COUNT = 5
+
+	IMAGE_Y_SHIFT = 50
 
 	IMAGE_WATER = "images/water-block.png"
 	IMAGE_STONE = "images/stone-block.png"
@@ -46,9 +48,15 @@ var (
 )
 
 var (
-	player *Player
-	enemy  *Enemy
+	player     *Player
+	enemies    []*Enemy
+	enemyCount = 5
+	rendering  = true
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	fmt.Println("Start")
@@ -70,7 +78,10 @@ func main() {
 	waitImage()
 
 	player = NewPlayer()
-	enemy = NewEnemy()
+	enemies = make([]*Enemy, enemyCount)
+	for idx, _ := range enemies {
+		enemies[idx] = NewEnemy()
+	}
 
 	StartFpsCounting()
 
@@ -81,18 +92,41 @@ func main() {
 
 	document.Call("addEventListener", "keydown", keyboardEventHandler)
 
+	var timeTick = time.Now()
+
 	var renderFrame js.Callback
 	renderFrame = js.NewCallback(func(args []js.Value) {
+		if rendering {
+			defer js.Global().Call("requestAnimationFrame", renderFrame)
+		} else {
+			return
+		}
+
+		if !shouldRenderNextFrame() {
+			return
+		}
+
+		dt := time.Since(timeTick)
+		timeTick = time.Now()
 
 		clearRect()
 		drawBaseGround()
 		drawEntity(player, IMAGE_GIRL)
-		drawEntity(enemy, IMAGE_BUG)
+		drawRect(player.GetCollisionRect())
+
+		for _, enemy := range enemies {
+			enemy.tick(dt)
+			drawEntity(enemy, IMAGE_BUG)
+			drawRect(enemy.GetCollisionRect())
+
+			if player.isCollision(enemy) {
+				fmt.Println("Collision!!")
+				rendering = false
+				return
+			}
+		}
 
 		AddFps()
-
-		waitToNextFrame()
-		js.Global().Call("requestAnimationFrame", renderFrame)
 	})
 	defer renderFrame.Release()
 
@@ -103,15 +137,24 @@ func main() {
 	fmt.Println("Main exit")
 }
 
+func stopAnimation() {
+	rendering = false
+}
+
 func clearRect() {
 	ctx.Call("clearRect", 0, 0, width, height)
+}
+
+func drawRect(rect *Rect) {
+	ctx.Call("strokeRect", rect.x1, rect.y1, (rect.x2 - rect.x1), (rect.y2 - rect.y1))
 }
 
 func drawBaseGround() {
 	for r := 0; r < ROW_COUNT; r++ {
 		for c := 0; c < COL_COUNT; c++ {
-			ctx.Call("drawImage", imageCache[RowImages[r]],
-				c*CELL_WIDTH, r*CELL_HEIGHT)
+			x, y := c*CELL_WIDTH, r*CELL_HEIGHT
+			ctx.Call("drawImage", imageCache[RowImages[r]], x, y)
+			drawRect(&Rect{x1: x, y1: y, x2: x + 3, y2: y + 3})
 		}
 	}
 
@@ -128,16 +171,18 @@ func handleKeyboardEvent(args []js.Value) {
 	eventType := event.Get("type")
 	key := event.Get("key").String()
 
-	fmt.Println("Event", eventType, key)
-
 	switch key {
 	case "ArrowUp":
+		fmt.Println("Event", eventType, key)
 		player.move(DIRECTION_UP)
 	case "ArrowDown":
+		fmt.Println("Event", eventType, key)
 		player.move(DIRECTION_DOWN)
 	case "ArrowLeft":
+		fmt.Println("Event", eventType, key)
 		player.move(DIRECTION_LEFT)
 	case "ArrowRight":
+		fmt.Println("Event", eventType, key)
 		player.move(DIRECTION_RIGHT)
 	}
 }

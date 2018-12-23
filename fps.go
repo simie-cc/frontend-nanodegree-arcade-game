@@ -6,11 +6,13 @@ import (
 )
 
 var fps = 0
-var FPS_LIMIT = 20
+var FPS_LIMIT = 40
 var FRAME_INTERVAL = time.Second / time.Duration(FPS_LIMIT)
 var lastFrameAt time.Time = time.Now()
 
 func StartFpsCounting() {
+	fmt.Println("FRAME_INTERVAL", FRAME_INTERVAL)
+
 	secondTicker := time.NewTicker(1 * time.Second)
 	fpsDiv := document.Call("getElementById", "fps")
 
@@ -27,11 +29,12 @@ func AddFps() {
 	fps++
 }
 
-func waitToNextFrame() {
+func shouldRenderNextFrame() bool {
 	duration := time.Since(lastFrameAt)
-	if duration < FRAME_INTERVAL {
-		time.Sleep(FRAME_INTERVAL - duration)
+	if duration <= FRAME_INTERVAL {
+		return false
 	}
 
 	lastFrameAt = time.Now()
+	return true
 }
