@@ -38,9 +38,16 @@ var (
 )
 
 var (
+	done = make(chan bool, 0)
+
 	document js.Value
 	window   js.Value
 	ctx      js.Value
+)
+
+var (
+	player *Player
+	enemy  *Enemy
 )
 
 func main() {
@@ -53,7 +60,6 @@ func main() {
 	canvasEl.Set("width", width)
 	canvasEl.Set("height", height)
 	ctx = canvasEl.Call("getContext", "2d")
-	done := make(chan bool, 0)
 
 	prepareImage(IMAGE_WATER)
 	prepareImage(IMAGE_STONE)
@@ -63,10 +69,17 @@ func main() {
 
 	waitImage()
 
-	player := NewPlayer()
-	enemy := NewEnemy()
+	player = NewPlayer()
+	enemy = NewEnemy()
+
+	StartFpsCounting()
 
 	fmt.Println("is continue1")
+
+	var keyboardEventHandler = js.NewCallback(handleKeyboardEvent)
+	defer keyboardEventHandler.Release()
+
+	document.Call("addEventListener", "keydown", keyboardEventHandler)
 
 	var renderFrame js.Callback
 	renderFrame = js.NewCallback(func(args []js.Value) {
@@ -76,28 +89,10 @@ func main() {
 		drawEntity(player, IMAGE_GIRL)
 		drawEntity(enemy, IMAGE_BUG)
 
-		// now := args[0].Float()
-		// tdiff := now - tmark
-		// tdiffSum += now - tmark
-		// markCount++
-		// if markCount > 10 {
-		// 	doc.Call("getElementById", "fps").Set("innerHTML", fmt.Sprintf("FPS: %.01f", 1000/(tdiffSum/float64(markCount))))
-		// 	tdiffSum, markCount = 0, 0
-		// }
-		// tmark = now
+		AddFps()
 
-		// // Pool window size to handle resize
-		// curBodyW := doc.Get("body").Get("clientWidth").Float()
-		// curBodyH := doc.Get("body").Get("clientHeight").Float()
-		// if curBodyW != width || curBodyH != height {
-		// 	width, height = curBodyW, curBodyH
-		// 	canvasEl.Set("width", width)
-		// 	canvasEl.Set("height", height)
-		// }
-		// dt.Update(tdiff / 1000)
-
-		//js.Global().Call("requestAnimationFrame", renderFrame)
-		done <- true
+		waitToNextFrame()
+		js.Global().Call("requestAnimationFrame", renderFrame)
 	})
 	defer renderFrame.Release()
 
@@ -126,6 +121,25 @@ func drawEntity(p Positional, charurl string) {
 	x, y := p.GetXY()
 	ctx.Call("drawImage", imageCache[charurl],
 		x, y)
+}
+
+func handleKeyboardEvent(args []js.Value) {
+	event := args[0]
+	eventType := event.Get("type")
+	key := event.Get("key").String()
+
+	fmt.Println("Event", eventType, key)
+
+	switch key {
+	case "ArrowUp":
+		player.move(DIRECTION_UP)
+	case "ArrowDown":
+		player.move(DIRECTION_DOWN)
+	case "ArrowLeft":
+		player.move(DIRECTION_LEFT)
+	case "ArrowRight":
+		player.move(DIRECTION_RIGHT)
+	}
 }
 
 // 	// Init Canvas stuff
