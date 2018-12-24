@@ -84,8 +84,11 @@ func (r *JSRenderer) DrawRect(rect *Rect) {
 }
 
 func (r *JSRenderer) DrawImage(url string, x, y int) {
+
 	r.ctx.Call("drawImage", r.imageCache[url], x, y)
-	r.DrawRect(&Rect{x1: x, y1: y, x2: x + 3, y2: y + 3})
+	if verboseLevel > 0 {
+		r.DrawRect(&Rect{x1: x, y1: y, x2: x + 3, y2: y + 3})
+	}
 }
 
 func (r *JSRenderer) ListenKeyboardEvent(fn func(eventType, key string)) {
