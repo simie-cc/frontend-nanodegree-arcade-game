@@ -10,14 +10,7 @@
 			})
 
 			function clickDebug() {
-				let callId = new Date().getTime()
-				console.log("callid is ", callId)
-				GetVerboseLevel(callId)
-				setTimeout(() => {
-					const rvKey = 'rv_' + callId
-					console.log('return value', window[rvKey])
-					delete window[rvKey]
-				})
+				ToggleDebug()
 			}
 		</script>
 	</head>

@@ -71,7 +71,7 @@ var (
 	charSelectedIndex = 0
 	menuImageRects    []Rect
 
-	verboseLevel = 1
+	verboseLevel = 0
 )
 
 func init() {
@@ -87,11 +87,8 @@ func main() {
 	renderer.ListenKeyboardEvent(handleKeyboardEvent)
 	renderer.ListenMouseMoveEvent(handleMouseMoveEvent)
 
-	systemService.RegisterGetVerboseLevel(func() int {
-		return verboseLevel
-	})
-	systemService.RegisterSetVerboseLevel(func(newLevel int) {
-		verboseLevel = newLevel
+	systemService.RegisterToggleDebug(func() {
+		verboseLevel = (verboseLevel + 1) % 2
 	})
 
 	fmt.Println("Start game...")
@@ -217,7 +214,10 @@ func startGame(withEnemyCount int) {
 		renderer.DrawText(fmt.Sprintf("難度: %d", enemyCount), 50, 20)
 
 		drawEntity(player, charSelected)
-		renderer.DrawRect(player.GetCollisionRect())
+		if verboseLevel > 0 {
+			renderer.DrawRect(player.GetCollisionRect())
+		}
+
 		if len(failMessage) == 0 && player.IsReachEdge() {
 			gameMode = GAMEMODE_PLAY_READONLY
 			failMessage = "過關！"
@@ -229,7 +229,9 @@ func startGame(withEnemyCount int) {
 		for _, enemy := range enemies {
 			enemy.tick(dt)
 			drawEntity(enemy, IMAGE_BUG)
-			renderer.DrawRect(enemy.GetCollisionRect())
+			if verboseLevel > 0 {
+				renderer.DrawRect(enemy.GetCollisionRect())
+			}
 
 			if len(failMessage) == 0 && player.isCollision(enemy) {
 				fmt.Println("Collision!!")
